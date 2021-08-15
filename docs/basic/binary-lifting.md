@@ -107,3 +107,124 @@ RMQ 是 Range Maximum/Minimum Query 的缩写，表示区间最大（最小）�
       printf("%d\n", ans);
     }
     ```
+
+### 题 3
+
+???+note "[P1084 疫情控制 ](https://www.luogu.com.cn/problem/P1084)"
+
+​	题目大意：一棵 $n$ 个节点，以 1 为根、带边权的树，有m个军队驻扎在一些给定节点上，军队从一个节点移动到另一个节点所需时间为边权，军队可以同时移动，问最少需要多长时间才能使根到每个叶子节点的路径上都至少有一个军队（军队最终不能停在根节点）。  数据范围：$2\leq m \leq n\leq 50000$，$1\leq w\leq 10^{9}$。
+
+??? note "解题思路"
+    首先想到答案的单调性引导我们去二分答案，然后考虑如何判断确定的时间内能否控制住所有叶子节点。给定时间 $x$ ，所有军队在到达根节点之前肯定是越向上跳能管住的叶子节点越多，所以就利用倍增先让所有军队尽可能向上跳，这一步时间复杂度 $mlog(n)$ 。
+
+​	我们发现可能有一部分军队跳上去还有多余，一部分叶子节点仍没有被覆盖到，所以我们在这一步同时记录下这些军队到节点1时的剩余时间以及它所处的子树，然后接下来就是将剩余的军队和子树用贪心法进行匹配的过程。
+
+​	此题倍增的关键用处是在 $log(n)$ 时间内找到带边权树中的任一节点向上一段距离最终能到达的节点。
+
+??? note "参考代码"
+  ```cpp
+  #include<cstdio>
+  #include<iostream>
+  #include<cstring>
+  #include<algorithm>
+  using namespace std;
+  #define N 50005
+  #define ll long long
+  int n,m,g[N*2],tmp;
+  struct la{int c,to;ll w;}e[N*2];
+  inline void tu(int x,int y,ll w){e[++tmp].c=y,e[tmp].to=g[x],g[x]=tmp,e[tmp].w=w;}
+  int arm[N],dp[N][22],dep[N];
+  ll dis[N];
+  void dfs1(int u,int f){
+    dp[u][0]=f;dep[u]=dep[f]+1;
+    for(int i=1;i<=20;++i){
+      dp[u][i]=dp[dp[u][i-1]][i-1];
+      if(!dp[u][i])break;
+    }
+    for(int i=g[u];i;i=e[i].to){
+      int d=e[i].c;
+      if(d==f)continue;
+      dis[d]=dis[u]+e[i].w;
+      dfs1(d,u);
+    }	
+  }
+  int tag[N];
+  int son[N],child;
+  ll now[N];
+  inline void tiao(int p,ll x){
+    int y=p;
+    for(int i=20;i>=0;--i){
+      if(dis[y]-dis[dp[p][i]]<=x&&dep[dp[p][i]]>1)p=dp[p][i];
+    }
+    tag[p]++;
+  }
+  inline int fff(int p){
+    for(int i=20;i>=0;--i){
+      if(dep[dp[p][i]]>1)p=dp[p][i];
+    }
+    return p;
+  }
+  int in[N];
+  bool dfs2(int u,int f){
+    bool is=1;//是不是叶子
+    bool flag=1;//
+    for(int i=g[u];i;i=e[i].to){
+      int d=e[i].c;
+      if(d==f)continue;
+      is=0;
+      bool now=dfs2(d,u);
+      if(!tag[d]&&!now){
+        if(u==1)son[++child]=d;
+        else flag=0;
+      }
+      else if(now&&in[d]>1)tag[d]++;
+    }
+    if(is&&!tag[u])return 0;
+    return flag;
+  }
+  bool cmp(int x,int y){return dis[x]>dis[y];}
+  bool no[N];
+  bool check(ll x){
+    memset(tag,0,sizeof(tag));int i;
+    memset(no,0,sizeof(no));
+    for(i=1;i<=m;++i){
+      if(dis[arm[i]]>=x) tiao(arm[i],x);
+      else break;
+    }child=0;
+    dfs2(1,0);
+    for(int j=i;j<=m;++j){
+      int p=fff(arm[j]);
+      if(!tag[p]&&dis[p]>x-dis[arm[j]])tag[p]++,no[j]=1;
+    }
+    sort(son+1,son+child+1,cmp);int r=1;
+    for(int j=m;j>=i;--j){//x-dis[arm[j]]从大到小
+      int p=fff(arm[j]);
+      if(no[j])continue;
+      while(tag[son[r]]&&r<=child)r++;
+      if(r>child)return 1;
+      if(dis[son[r]]>x-dis[arm[j]])return 0;
+      r++;
+    }
+    while(tag[son[r]]&&r<=child)r++;
+    if(r>child)return 1;
+    return 0;
+  }
+  int main(){	
+    scanf("%d",&n);ll c;
+    for(int i=1,a,b;i<n;++i)scanf("%d%d%lld",&a,&b,&c),tu(a,b,c),tu(b,a,c),in[b]++,in[a]++;
+    dfs1(1,0);
+    scanf("%d",&m);
+    for(int i=1;i<=m;++i)scanf("%d",&arm[i]);
+    sort(arm+1,arm+m+1,cmp);
+    ll l=0,r=1e14;
+    while(l+1<r){
+      ll mid=(l+r)>>1;
+      if(check(mid))r=mid;
+      else l=mid;
+    }
+    if(check(l)){printf("%lld\n",l);}
+    else if(check(r)){printf("%lld\n",r);}
+    else printf("-1\n");
+    return 0;
+  }    
+  ```
