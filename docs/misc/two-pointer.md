@@ -33,7 +33,7 @@ int numSubarrayProductLessThanK(vector<int>& nums, int k) {
 
 接下来看一道在树上使用双指针并结合树上差分的例题：
 
-例题 2 [luogu P3066 Running Away From the Barn G )](https://www.luogu.com.cn/problem/P3066)
+例题 2 [luogu P3066 Running Away From the Barn G](https://www.luogu.com.cn/problem/P3066)
 
 给定一颗 $n$ 个点的有根树，边有边权，节点从 1 至 $n$ 编号，1 号节点是这棵树的根。
 
